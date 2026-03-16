@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,24 @@ public class RestExceptionHandler {
             .getFieldErrors()
             .stream()
             .map(FieldError::getField)
+            .distinct()
+            .collect(Collectors.joining(", "));
+
+        return buildResponse(HttpStatus.BAD_REQUEST,
+            "Champs invalides ou manquants: " + message,
+            request.getRequestURI());
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException exception,
+                                                                   HttpServletRequest request) {
+        String message = exception.getConstraintViolations()
+            .stream()
+            .map(constraintViolation -> {
+                String path = constraintViolation.getPropertyPath().toString();
+                int lastSeparatorIndex = path.lastIndexOf('.');
+                return lastSeparatorIndex >= 0 ? path.substring(lastSeparatorIndex + 1) : path;
+            })
             .distinct()
             .collect(Collectors.joining(", "));
 
