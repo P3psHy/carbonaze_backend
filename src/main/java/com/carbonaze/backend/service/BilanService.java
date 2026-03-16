@@ -1,0 +1,65 @@
+package com.carbonaze.backend.service;
+
+import com.carbonaze.backend.dto.BilanResponse;
+import com.carbonaze.backend.dto.CreateBilanRequest;
+import com.carbonaze.backend.entity.Bilan;
+import com.carbonaze.backend.entity.Site;
+import com.carbonaze.backend.exception.ResourceNotFoundException;
+import com.carbonaze.backend.repository.BilanRepository;
+import com.carbonaze.backend.repository.SiteRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class BilanService {
+
+    private final BilanRepository bilanRepository;
+    private final SiteRepository siteRepository;
+
+    public BilanService(BilanRepository bilanRepository, SiteRepository siteRepository) {
+        this.bilanRepository = bilanRepository;
+        this.siteRepository = siteRepository;
+    }
+
+    @Transactional
+    public BilanResponse createBilan(Long siteId, CreateBilanRequest request) {
+        Site site = siteRepository.findById(siteId)
+            .orElseThrow(() -> new ResourceNotFoundException("Site introuvable avec l'id " + siteId));
+
+        Bilan bilan = new Bilan();
+        bilan.setSite(site);
+        bilan.setElectricityKwhYear(request.getElectricityKwhYear());
+        bilan.setGasKwhYear(request.getGasKwhYear());
+        bilan.setTotalCo2(request.getTotalCo2());
+        bilan.setCalculationDate(request.getCalculationDate() != null ? request.getCalculationDate() : LocalDate.now());
+
+        return toResponse(bilanRepository.save(bilan));
+    }
+
+    @Transactional(readOnly = true)
+    public List<BilanResponse> getBilansBySite(Long siteId) {
+        if (!siteRepository.existsById(siteId)) {
+            throw new ResourceNotFoundException("Site introuvable avec l'id " + siteId);
+        }
+
+        return bilanRepository.findBySiteIdOrderByCalculationDateDescIdDesc(siteId)
+            .stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
+    }
+
+    private BilanResponse toResponse(Bilan bilan) {
+        BilanResponse response = new BilanResponse();
+        response.setId(bilan.getId());
+        response.setElectricityKwhYear(bilan.getElectricityKwhYear());
+        response.setGasKwhYear(bilan.getGasKwhYear());
+        response.setTotalCo2(bilan.getTotalCo2());
+        response.setCalculationDate(bilan.getCalculationDate());
+        response.setSiteId(bilan.getSite().getId());
+        return response;
+    }
+}
