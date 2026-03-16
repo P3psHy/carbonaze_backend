@@ -94,4 +94,48 @@ class CarbonHistoryIntegrationTest {
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Site introuvable avec l'id 999"));
     }
+
+    @Test
+    void shouldSaveAndRetrieveMaterialsForSync() throws Exception {
+        MvcResult creationResult = mockMvc.perform(post("/api/materials")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("[{"
+                    + "\"name\":\"Acier\","
+                    + "\"energeticValue\":2.5,"
+                    + "\"quantity\":10"
+                    + "},{"
+                    + "\"name\":\"Bois\","
+                    + "\"energeticValue\":1.2,"
+                    + "\"quantity\":4"
+                    + "}]"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].name").value("Acier"))
+            .andExpect(jsonPath("$[1].name").value("Bois"))
+            .andReturn();
+
+        JsonNode createdMaterials = objectMapper.readTree(creationResult.getResponse().getContentAsString());
+        long acierId = createdMaterials.get(0).get("id").asLong();
+
+        mockMvc.perform(post("/api/materials")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("[{"
+                    + "\"id\":" + acierId + ","
+                    + "\"name\":\"Acier recycle\","
+                    + "\"energeticValue\":2.1,"
+                    + "\"quantity\":12"
+                    + "}]"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$[0].id").value(acierId))
+            .andExpect(jsonPath("$[0].name").value("Acier recycle"))
+            .andExpect(jsonPath("$[0].quantity").value(12.0));
+
+        mockMvc.perform(get("/api/materials"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].id").value(acierId))
+            .andExpect(jsonPath("$[0].name").value("Acier recycle"))
+            .andExpect(jsonPath("$[0].energeticValue").value(2.1))
+            .andExpect(jsonPath("$[1].name").value("Bois"));
+    }
 }
