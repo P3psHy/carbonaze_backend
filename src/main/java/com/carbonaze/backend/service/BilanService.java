@@ -52,6 +52,21 @@ public class BilanService {
             .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<BilanResponse> getAllBilans() {
+        return bilanRepository.findAllByOrderByCalculationDateDescIdDesc()
+            .stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteBilan(Long bilanId) {
+        Bilan bilan = bilanRepository.findById(bilanId)
+            .orElseThrow(() -> new ResourceNotFoundException("Bilan introuvable avec l'id " + bilanId));
+        bilanRepository.delete(bilan);
+    }
+
     private BilanResponse toResponse(Bilan bilan) {
         BilanResponse response = new BilanResponse();
         response.setId(bilan.getId());

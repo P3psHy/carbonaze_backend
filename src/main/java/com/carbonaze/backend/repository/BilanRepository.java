@@ -8,4 +8,6 @@ import java.util.List;
 public interface BilanRepository extends JpaRepository<Bilan, Long> {
 
     List<Bilan> findBySiteIdOrderByCalculationDateDescIdDesc(Long siteId);
+
+    List<Bilan> findAllByOrderByCalculationDateDescIdDesc();
 }

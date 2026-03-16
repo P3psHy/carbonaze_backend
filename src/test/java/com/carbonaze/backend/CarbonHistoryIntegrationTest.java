@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -96,6 +97,46 @@ class CarbonHistoryIntegrationTest {
     }
 
     @Test
+    void shouldRetrieveAllBilans() throws Exception {
+        long societyId = createSociety("Carbonaze");
+        long siteParisId = createSite(societyId, "Site Paris", "Paris");
+        long siteLyonId = createSite(societyId, "Site Lyon", "Lyon");
+
+        createBilan(siteParisId, 18.5, "2026-03-16");
+        createBilan(siteLyonId, 12.3, "2026-03-18");
+        createBilan(siteParisId, 17.9, "2026-03-17");
+
+        mockMvc.perform(get("/api/bilans"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(3)))
+            .andExpect(jsonPath("$[0].calculationDate").value("2026-03-18"))
+            .andExpect(jsonPath("$[0].siteId").value(siteLyonId))
+            .andExpect(jsonPath("$[1].calculationDate").value("2026-03-17"))
+            .andExpect(jsonPath("$[2].calculationDate").value("2026-03-16"));
+    }
+
+    @Test
+    void shouldDeleteABilan() throws Exception {
+        long societyId = createSociety("Carbonaze Delete");
+        long siteId = createSite(societyId, "Site Nantes", "Nantes");
+        long bilanId = createBilan(siteId, 9.4, "2026-03-19");
+
+        mockMvc.perform(delete("/api/bilans/{bilanId}", bilanId))
+            .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/bilans"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void shouldReturn404WhenDeletingUnknownBilan() throws Exception {
+        mockMvc.perform(delete("/api/bilans/999"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value("Bilan introuvable avec l'id 999"));
+    }
+
+    @Test
     void shouldSaveAndRetrieveMaterialsForSync() throws Exception {
         MvcResult creationResult = mockMvc.perform(post("/api/materials")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -137,5 +178,54 @@ class CarbonHistoryIntegrationTest {
             .andExpect(jsonPath("$[0].name").value("Acier recycle"))
             .andExpect(jsonPath("$[0].energeticValue").value(2.1))
             .andExpect(jsonPath("$[1].name").value("Bois"));
+    }
+
+    private long createSociety(String name) throws Exception {
+        MvcResult societyResult = mockMvc.perform(post("/api/societies")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"" + name + "\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        JsonNode societyJson = objectMapper.readTree(societyResult.getResponse().getContentAsString());
+        return societyJson.get("id").asLong();
+    }
+
+    private long createSite(long societyId, String name, String city) throws Exception {
+        String payload = "{"
+            + "\"name\":\"" + name + "\","
+            + "\"city\":\"" + city + "\","
+            + "\"numberEmployee\":120,"
+            + "\"parkingPlaces\":30,"
+            + "\"numberPc\":90,"
+            + "\"societyId\":" + societyId
+            + "}";
+
+        MvcResult siteResult = mockMvc.perform(post("/api/sites")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        JsonNode siteJson = objectMapper.readTree(siteResult.getResponse().getContentAsString());
+        return siteJson.get("id").asLong();
+    }
+
+    private long createBilan(long siteId, double totalCo2, String calculationDate) throws Exception {
+        String payload = "{"
+            + "\"electricityKwhYear\":12000,"
+            + "\"gasKwhYear\":4500,"
+            + "\"totalCo2\":" + totalCo2 + ","
+            + "\"calculationDate\":\"" + calculationDate + "\""
+            + "}";
+
+        MvcResult bilanResult = mockMvc.perform(post("/api/sites/{siteId}/bilans", siteId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        JsonNode bilanJson = objectMapper.readTree(bilanResult.getResponse().getContentAsString());
+        return bilanJson.get("id").asLong();
     }
 }
