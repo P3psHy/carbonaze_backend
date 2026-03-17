@@ -1,6 +1,7 @@
 package com.carbonaze.backend.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public class BilanResponse {
 
@@ -11,6 +12,7 @@ public class BilanResponse {
     private LocalDate calculationDate;
     private Long siteId;
     private SiteSummary site;
+    private List<BilanMaterialResponse> materials;
 
     public Long getId() {
         return id;
@@ -66,6 +68,14 @@ public class BilanResponse {
 
     public void setSite(SiteSummary site) {
         this.site = site;
+    }
+
+    public List<BilanMaterialResponse> getMaterials() {
+        return materials;
+    }
+
+    public void setMaterials(List<BilanMaterialResponse> materials) {
+        this.materials = materials;
     }
 
     public static class SiteSummary {

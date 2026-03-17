@@ -1,16 +1,22 @@
 package com.carbonaze.backend.service;
 
+import com.carbonaze.backend.dto.BilanMaterialRequest;
+import com.carbonaze.backend.dto.BilanMaterialResponse;
 import com.carbonaze.backend.dto.BilanResponse;
 import com.carbonaze.backend.dto.CreateBilanRequest;
 import com.carbonaze.backend.entity.Bilan;
+import com.carbonaze.backend.entity.BilanMaterial;
+import com.carbonaze.backend.entity.Material;
 import com.carbonaze.backend.entity.Site;
 import com.carbonaze.backend.exception.ResourceNotFoundException;
 import com.carbonaze.backend.repository.BilanRepository;
+import com.carbonaze.backend.repository.MaterialRepository;
 import com.carbonaze.backend.repository.SiteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,10 +25,12 @@ public class BilanService {
 
     private final BilanRepository bilanRepository;
     private final SiteRepository siteRepository;
+    private final MaterialRepository materialRepository;
 
-    public BilanService(BilanRepository bilanRepository, SiteRepository siteRepository) {
+    public BilanService(BilanRepository bilanRepository, SiteRepository siteRepository, MaterialRepository materialRepository) {
         this.bilanRepository = bilanRepository;
         this.siteRepository = siteRepository;
+        this.materialRepository = materialRepository;
     }
 
     @Transactional
@@ -36,6 +44,7 @@ public class BilanService {
         bilan.setGasKwhYear(request.getGasKwhYear());
         bilan.setTotalCo2(request.getTotalCo2());
         bilan.setCalculationDate(request.getCalculationDate() != null ? request.getCalculationDate() : LocalDate.now());
+        bilan.setMaterials(toBilanMaterials(request.getMaterials(), bilan));
 
         return toResponse(bilanRepository.save(bilan));
     }
@@ -84,6 +93,59 @@ public class BilanService {
         Site site = bilan.getSite();
         response.setSiteId(site.getId());
         response.setSite(toSiteSummary(site));
+        response.setMaterials(toBilanMaterialResponses(bilan.getMaterials()));
+        return response;
+    }
+
+    private List<BilanMaterial> toBilanMaterials(List<BilanMaterialRequest> requests, Bilan bilan) {
+        if (requests == null || requests.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return requests.stream()
+            .map(request -> toBilanMaterial(request, bilan))
+            .collect(Collectors.toList());
+    }
+
+    private BilanMaterial toBilanMaterial(BilanMaterialRequest request, Bilan bilan) {
+        BilanMaterial material = new BilanMaterial();
+        material.setBilan(bilan);
+        material.setName(request.getName().trim());
+        material.setQuantity(request.getQuantity());
+        material.setFactor(request.getFactor());
+        material.setEmission(request.getEmission());
+
+        if (request.getMaterialId() != null) {
+            Material linkedMaterial = materialRepository.findById(request.getMaterialId())
+                .orElseThrow(() -> new ResourceNotFoundException("Materiau introuvable avec l'id " + request.getMaterialId()));
+            material.setMaterial(linkedMaterial);
+        }
+
+        return material;
+    }
+
+    private List<BilanMaterialResponse> toBilanMaterialResponses(List<BilanMaterial> materials) {
+        if (materials == null || materials.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return materials.stream()
+            .map(this::toBilanMaterialResponse)
+            .collect(Collectors.toList());
+    }
+
+    private BilanMaterialResponse toBilanMaterialResponse(BilanMaterial material) {
+        BilanMaterialResponse response = new BilanMaterialResponse();
+        response.setId(material.getId());
+        response.setName(material.getName());
+        response.setQuantity(material.getQuantity());
+        response.setFactor(material.getFactor());
+        response.setEmission(material.getEmission());
+
+        if (material.getMaterial() != null) {
+            response.setMaterialId(material.getMaterial().getId());
+        }
+
         return response;
     }
 

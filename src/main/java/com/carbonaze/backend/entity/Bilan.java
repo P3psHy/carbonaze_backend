@@ -8,8 +8,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OrderBy;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "bilan")
@@ -34,6 +38,10 @@ public class Bilan {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "site_id", nullable = false)
     private Site site;
+
+    @OneToMany(mappedBy = "bilan", cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id ASC")
+    private List<BilanMaterial> materials = new ArrayList<BilanMaterial>();
 
     public Long getId() {
         return id;
@@ -81,5 +89,13 @@ public class Bilan {
 
     public void setSite(Site site) {
         this.site = site;
+    }
+
+    public List<BilanMaterial> getMaterials() {
+        return materials;
+    }
+
+    public void setMaterials(List<BilanMaterial> materials) {
+        this.materials = materials;
     }
 }

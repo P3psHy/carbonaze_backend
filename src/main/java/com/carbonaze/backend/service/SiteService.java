@@ -40,9 +40,26 @@ public class SiteService {
         Society society = societyRepository.findById(request.getSocietyId())
             .orElseThrow(() -> new ResourceNotFoundException("Societe introuvable avec l'id " + request.getSocietyId()));
 
+        String normalizedName = normalizeText(request.getName());
+        String normalizedCity = normalizeText(request.getCity());
+
+        Optional<Site> existingSite = siteRepository
+            .findFirstBySocietyIdAndNameIgnoreCaseAndCityIgnoreCaseAndNumberEmployeeAndParkingPlacesAndNumberPc(
+                society.getId(),
+                normalizedName,
+                normalizedCity,
+                request.getNumberEmployee(),
+                request.getParkingPlaces(),
+                request.getNumberPc()
+            );
+
+        if (existingSite != null && existingSite.isPresent()) {
+            return toResponse(existingSite.get());
+        }
+
         Site site = new Site();
-        site.setName(request.getName());
-        site.setCity(request.getCity());
+        site.setName(normalizedName);
+        site.setCity(normalizedCity);
         site.setNumberEmployee(request.getNumberEmployee());
         site.setParkingPlaces(request.getParkingPlaces());
         site.setNumberPc(request.getNumberPc());
@@ -96,5 +113,9 @@ public class SiteService {
         }
 
         return response;
+    }
+
+    private String normalizeText(String value) {
+        return value == null ? "" : value.trim();
     }
 }

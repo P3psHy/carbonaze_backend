@@ -19,6 +19,12 @@ mvn spring-boot:run
 
 L'application demarre par defaut sur `http://localhost:8080`.
 
+## Documentation API
+
+La documentation complete des endpoints (auth, payloads, validations, erreurs, exemples) est disponible ici:
+
+- [API.md](./API.md)
+
 ## Endpoints principaux
 
 ### Creer une societe

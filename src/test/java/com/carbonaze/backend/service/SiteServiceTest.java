@@ -25,6 +25,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,6 +61,9 @@ class SiteServiceTest {
         LocalDateTime beforeCall = LocalDateTime.now();
 
         when(societyRepository.findById(5L)).thenReturn(Optional.of(society));
+        when(siteRepository.findFirstBySocietyIdAndNameIgnoreCaseAndCityIgnoreCaseAndNumberEmployeeAndParkingPlacesAndNumberPc(
+            5L, "Site Paris", "Paris", 120, 30, 90
+        )).thenReturn(Optional.empty());
         when(siteRepository.save(any(Site.class))).thenAnswer(invocation -> {
             Site site = invocation.getArgument(0);
             site.setId(8L);
@@ -76,6 +81,43 @@ class SiteServiceTest {
         assertThat(response.getNumberPc()).isEqualTo(90);
         assertThat(response.getSocietyId()).isEqualTo(5L);
         assertThat(response.getCreatedAt()).isBetween(beforeCall, afterCall);
+    }
+
+    @Test
+    void createSiteShouldReturnExistingSiteWhenPayloadAlreadyExists() {
+        CreateSiteRequest request = new CreateSiteRequest();
+        request.setName(" Site Paris ");
+        request.setCity(" Paris ");
+        request.setNumberEmployee(120);
+        request.setParkingPlaces(30);
+        request.setNumberPc(90);
+        request.setSocietyId(5L);
+
+        Society society = new Society();
+        society.setId(5L);
+
+        Site existingSite = new Site();
+        existingSite.setId(8L);
+        existingSite.setName("Site Paris");
+        existingSite.setCity("Paris");
+        existingSite.setNumberEmployee(120);
+        existingSite.setParkingPlaces(30);
+        existingSite.setNumberPc(90);
+        existingSite.setCreatedAt(LocalDateTime.of(2026, 3, 17, 10, 45));
+        existingSite.setSociety(society);
+
+        when(societyRepository.findById(5L)).thenReturn(Optional.of(society));
+        when(siteRepository.findFirstBySocietyIdAndNameIgnoreCaseAndCityIgnoreCaseAndNumberEmployeeAndParkingPlacesAndNumberPc(
+            5L, "Site Paris", "Paris", 120, 30, 90
+        )).thenReturn(Optional.of(existingSite));
+
+        SiteResponse response = siteService.createSite(request);
+
+        assertThat(response.getId()).isEqualTo(8L);
+        assertThat(response.getName()).isEqualTo("Site Paris");
+        assertThat(response.getCity()).isEqualTo("Paris");
+        assertThat(response.getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 3, 17, 10, 45));
+        verify(siteRepository, never()).save(any(Site.class));
     }
 
     @Test

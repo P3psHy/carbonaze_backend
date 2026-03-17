@@ -1,5 +1,6 @@
 package com.carbonaze.backend.service;
 
+import com.carbonaze.backend.dto.BilanMaterialRequest;
 import com.carbonaze.backend.dto.BilanResponse;
 import com.carbonaze.backend.dto.CreateBilanRequest;
 import com.carbonaze.backend.entity.Bilan;
@@ -7,6 +8,7 @@ import com.carbonaze.backend.entity.Site;
 import com.carbonaze.backend.entity.Society;
 import com.carbonaze.backend.exception.ResourceNotFoundException;
 import com.carbonaze.backend.repository.BilanRepository;
+import com.carbonaze.backend.repository.MaterialRepository;
 import com.carbonaze.backend.repository.SiteRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +36,9 @@ class BilanServiceTest {
 
     @Mock
     private SiteRepository siteRepository;
+
+    @Mock
+    private MaterialRepository materialRepository;
 
     @InjectMocks
     private BilanService bilanService;
@@ -60,6 +66,9 @@ class BilanServiceTest {
         assertThat(response.getSite()).isNotNull();
         assertThat(response.getSite().getName()).isEqualTo("Site 7");
         assertThat(response.getSite().getNumberEmployee()).isEqualTo(120);
+        assertThat(response.getMaterials()).hasSize(1);
+        assertThat(response.getMaterials().get(0).getName()).isEqualTo("Acier");
+        assertThat(response.getMaterials().get(0).getQuantity()).isEqualTo(2.0);
     }
 
     @Test
@@ -126,6 +135,16 @@ class BilanServiceTest {
         request.setGasKwhYear(4300.0);
         request.setTotalCo2(18.4);
         request.setCalculationDate(calculationDate);
+        request.setMaterials(Collections.singletonList(materialRequest()));
+        return request;
+    }
+
+    private BilanMaterialRequest materialRequest() {
+        BilanMaterialRequest request = new BilanMaterialRequest();
+        request.setName("Acier");
+        request.setQuantity(2.0);
+        request.setFactor(1.9);
+        request.setEmission(3.8);
         return request;
     }
 

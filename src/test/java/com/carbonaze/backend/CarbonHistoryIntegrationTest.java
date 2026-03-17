@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -20,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class CarbonHistoryIntegrationTest {
 
     @Autowired
@@ -65,11 +67,13 @@ class CarbonHistoryIntegrationTest {
                     + "\"electricityKwhYear\":12000,"
                     + "\"gasKwhYear\":4500,"
                     + "\"totalCo2\":18.5,"
-                    + "\"calculationDate\":\"2026-03-16\""
+                    + "\"calculationDate\":\"2026-03-16\","
+                    + "\"materials\":[{\"name\":\"Acier\",\"quantity\":2,\"factor\":1.9,\"emission\":3.8}]"
                     + "}"))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.siteId").value(siteId))
             .andExpect(jsonPath("$.site.city").value("Paris"))
+            .andExpect(jsonPath("$.materials[0].name").value("Acier"))
             .andExpect(jsonPath("$.totalCo2").value(18.5));
 
         mockMvc.perform(post("/api/sites/{siteId}/bilans", siteId)
@@ -130,6 +134,7 @@ class CarbonHistoryIntegrationTest {
             .andExpect(jsonPath("$.id").value(bilanId))
             .andExpect(jsonPath("$.siteId").value(siteId))
             .andExpect(jsonPath("$.site.name").value("Site Lille"))
+            .andExpect(jsonPath("$.materials[0].name").value("Acier"))
             .andExpect(jsonPath("$.totalCo2").value(11.7))
             .andExpect(jsonPath("$.calculationDate").value("2026-03-20"));
     }
@@ -262,7 +267,8 @@ class CarbonHistoryIntegrationTest {
             + "\"electricityKwhYear\":12000,"
             + "\"gasKwhYear\":4500,"
             + "\"totalCo2\":" + totalCo2 + ","
-            + "\"calculationDate\":\"" + calculationDate + "\""
+            + "\"calculationDate\":\"" + calculationDate + "\","
+            + "\"materials\":[{\"name\":\"Acier\",\"quantity\":2,\"factor\":1.9,\"emission\":3.8}]"
             + "}";
 
         MvcResult bilanResult = mockMvc.perform(post("/api/sites/{siteId}/bilans", siteId)

@@ -1,6 +1,7 @@
 package com.carbonaze.backend.controller;
 
 import com.carbonaze.backend.dto.BilanResponse;
+import com.carbonaze.backend.dto.BilanMaterialResponse;
 import com.carbonaze.backend.exception.ResourceNotFoundException;
 import com.carbonaze.backend.exception.RestExceptionHandler;
 import com.carbonaze.backend.service.BilanService;
@@ -43,6 +44,7 @@ class BilanControllerTest {
         response.setTotalCo2(18.4);
         response.setCalculationDate(LocalDate.of(2026, 3, 16));
         response.setSite(siteSummary(2L, "Site Paris", "Paris"));
+        response.setMaterials(Collections.singletonList(materialSummary("Acier", 2.0)));
 
         when(bilanService.createBilan(org.mockito.ArgumentMatchers.eq(2L), org.mockito.ArgumentMatchers.any()))
             .thenReturn(response);
@@ -54,6 +56,7 @@ class BilanControllerTest {
             .andExpect(jsonPath("$.id").value(4))
             .andExpect(jsonPath("$.siteId").value(2))
             .andExpect(jsonPath("$.site.name").value("Site Paris"))
+            .andExpect(jsonPath("$.materials[0].name").value("Acier"))
             .andExpect(jsonPath("$.calculationDate").value("2026-03-16"));
     }
 
@@ -102,5 +105,12 @@ class BilanControllerTest {
         siteSummary.setName(name);
         siteSummary.setCity(city);
         return siteSummary;
+    }
+
+    private BilanMaterialResponse materialSummary(String name, Double quantity) {
+        BilanMaterialResponse materialResponse = new BilanMaterialResponse();
+        materialResponse.setName(name);
+        materialResponse.setQuantity(quantity);
+        return materialResponse;
     }
 }

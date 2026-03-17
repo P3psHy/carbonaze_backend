@@ -2,9 +2,11 @@ package com.carbonaze.backend.dto;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
 import java.time.LocalDate;
+import java.util.List;
 
 public class CreateBilanRequest {
 
@@ -22,6 +24,9 @@ public class CreateBilanRequest {
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate calculationDate;
+
+    @Valid
+    private List<BilanMaterialRequest> materials;
 
     public Double getElectricityKwhYear() {
         return electricityKwhYear;
@@ -53,5 +58,13 @@ public class CreateBilanRequest {
 
     public void setCalculationDate(LocalDate calculationDate) {
         this.calculationDate = calculationDate;
+    }
+
+    public List<BilanMaterialRequest> getMaterials() {
+        return materials;
+    }
+
+    public void setMaterials(List<BilanMaterialRequest> materials) {
+        this.materials = materials;
     }
 }
