@@ -74,6 +74,12 @@ GET /api/sites/1/bilans
 GET /api/bilans
 ```
 
+### Recuperer un bilan par id
+
+```http
+GET /api/bilans/1
+```
+
 ### Supprimer un bilan
 
 ```http

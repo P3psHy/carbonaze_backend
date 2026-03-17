@@ -116,6 +116,27 @@ class CarbonHistoryIntegrationTest {
     }
 
     @Test
+    void shouldRetrieveABilanById() throws Exception {
+        long societyId = createSociety("Carbonaze Detail");
+        long siteId = createSite(societyId, "Site Lille", "Lille");
+        long bilanId = createBilan(siteId, 11.7, "2026-03-20");
+
+        mockMvc.perform(get("/api/bilans/{bilanId}", bilanId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(bilanId))
+            .andExpect(jsonPath("$.siteId").value(siteId))
+            .andExpect(jsonPath("$.totalCo2").value(11.7))
+            .andExpect(jsonPath("$.calculationDate").value("2026-03-20"));
+    }
+
+    @Test
+    void shouldReturn404WhenBilanDoesNotExist() throws Exception {
+        mockMvc.perform(get("/api/bilans/999"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value("Bilan introuvable avec l'id 999"));
+    }
+
+    @Test
     void shouldDeleteABilan() throws Exception {
         long societyId = createSociety("Carbonaze Delete");
         long siteId = createSite(societyId, "Site Nantes", "Nantes");

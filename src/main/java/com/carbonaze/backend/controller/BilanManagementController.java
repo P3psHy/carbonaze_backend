@@ -29,6 +29,11 @@ public class BilanManagementController {
         return bilanService.getAllBilans();
     }
 
+    @GetMapping("/{bilanId}")
+    public BilanResponse getBilanById(@PathVariable Long bilanId) {
+        return bilanService.getBilanById(bilanId);
+    }
+
     @DeleteMapping("/{bilanId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteBilan(@PathVariable Long bilanId) {

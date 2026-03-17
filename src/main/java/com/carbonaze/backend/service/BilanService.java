@@ -60,6 +60,13 @@ public class BilanService {
             .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public BilanResponse getBilanById(Long bilanId) {
+        Bilan bilan = bilanRepository.findById(bilanId)
+            .orElseThrow(() -> new ResourceNotFoundException("Bilan introuvable avec l'id " + bilanId));
+        return toResponse(bilan);
+    }
+
     @Transactional
     public void deleteBilan(Long bilanId) {
         Bilan bilan = bilanRepository.findById(bilanId)
