@@ -4,6 +4,7 @@ import com.carbonaze.backend.dto.BilanResponse;
 import com.carbonaze.backend.dto.CreateBilanRequest;
 import com.carbonaze.backend.entity.Bilan;
 import com.carbonaze.backend.entity.Site;
+import com.carbonaze.backend.entity.Society;
 import com.carbonaze.backend.exception.ResourceNotFoundException;
 import com.carbonaze.backend.repository.BilanRepository;
 import com.carbonaze.backend.repository.SiteRepository;
@@ -56,6 +57,9 @@ class BilanServiceTest {
         assertThat(response.getGasKwhYear()).isEqualTo(4300.0);
         assertThat(response.getTotalCo2()).isEqualTo(18.4);
         assertThat(response.getCalculationDate()).isEqualTo(LocalDate.of(2026, 3, 16));
+        assertThat(response.getSite()).isNotNull();
+        assertThat(response.getSite().getName()).isEqualTo("Site 7");
+        assertThat(response.getSite().getNumberEmployee()).isEqualTo(120);
     }
 
     @Test
@@ -100,6 +104,7 @@ class BilanServiceTest {
         assertThat(responses).hasSize(2);
         assertThat(responses.get(0).getId()).isEqualTo(12L);
         assertThat(responses.get(0).getSiteId()).isEqualTo(5L);
+        assertThat(responses.get(0).getSite().getCity()).isEqualTo("Paris");
         assertThat(responses.get(0).getCalculationDate()).isEqualTo(LocalDate.of(2026, 3, 17));
         assertThat(responses.get(1).getTotalCo2()).isEqualTo(18.2);
     }
@@ -127,6 +132,15 @@ class BilanServiceTest {
     private Site site(Long id) {
         Site site = new Site();
         site.setId(id);
+        site.setName("Site " + id);
+        site.setCity("Paris");
+        site.setNumberEmployee(120);
+        site.setParkingPlaces(30);
+        site.setNumberPc(90);
+
+        Society society = new Society();
+        society.setId(1L);
+        site.setSociety(society);
         return site;
     }
 

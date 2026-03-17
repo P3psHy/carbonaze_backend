@@ -7,6 +7,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.ConstraintViolationException;
@@ -53,6 +54,14 @@ public class RestExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST,
             "Champs invalides ou manquants: " + message,
             request.getRequestURI());
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException exception,
+                                                                       HttpServletRequest request) {
+        HttpStatus status = exception.getStatus();
+        String message = exception.getReason() != null ? exception.getReason() : status.getReasonPhrase();
+        return buildResponse(status, message, request.getRequestURI());
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message, String path) {

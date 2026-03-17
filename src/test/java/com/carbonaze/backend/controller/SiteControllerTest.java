@@ -1,6 +1,7 @@
 package com.carbonaze.backend.controller;
 
 import com.carbonaze.backend.dto.SiteResponse;
+import com.carbonaze.backend.dto.SiteComparisonResponse;
 import com.carbonaze.backend.exception.ResourceNotFoundException;
 import com.carbonaze.backend.exception.RestExceptionHandler;
 import com.carbonaze.backend.service.SiteService;
@@ -13,10 +14,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.Collections;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -75,5 +79,26 @@ class SiteControllerTest {
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Societe introuvable avec l'id 99"))
             .andExpect(jsonPath("$.path").value("/api/sites"));
+    }
+
+    @Test
+    void getSitesForComparisonShouldReturnComparisonPayload() throws Exception {
+        SiteComparisonResponse response = new SiteComparisonResponse();
+        response.setId(12L);
+        response.setName("Site Nantes");
+        response.setCity("Nantes");
+        response.setLatestBilanId(21L);
+        response.setLatestCalculationDate(LocalDate.of(2026, 3, 17));
+        response.setLatestTotalCo2(14.6);
+
+        when(siteService.getSitesForComparison()).thenReturn(Collections.singletonList(response));
+
+        mockMvc.perform(get("/api/sites/comparison"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].id").value(12))
+            .andExpect(jsonPath("$[0].name").value("Site Nantes"))
+            .andExpect(jsonPath("$[0].latestBilanId").value(21))
+            .andExpect(jsonPath("$[0].latestCalculationDate").value("2026-03-17"))
+            .andExpect(jsonPath("$[0].latestTotalCo2").value(14.6));
     }
 }

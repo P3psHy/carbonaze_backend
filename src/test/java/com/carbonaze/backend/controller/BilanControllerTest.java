@@ -42,6 +42,7 @@ class BilanControllerTest {
         response.setGasKwhYear(4300.0);
         response.setTotalCo2(18.4);
         response.setCalculationDate(LocalDate.of(2026, 3, 16));
+        response.setSite(siteSummary(2L, "Site Paris", "Paris"));
 
         when(bilanService.createBilan(org.mockito.ArgumentMatchers.eq(2L), org.mockito.ArgumentMatchers.any()))
             .thenReturn(response);
@@ -52,6 +53,7 @@ class BilanControllerTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(4))
             .andExpect(jsonPath("$.siteId").value(2))
+            .andExpect(jsonPath("$.site.name").value("Site Paris"))
             .andExpect(jsonPath("$.calculationDate").value("2026-03-16"));
     }
 
@@ -62,12 +64,14 @@ class BilanControllerTest {
         response.setSiteId(3L);
         response.setTotalCo2(17.9);
         response.setCalculationDate(LocalDate.of(2026, 3, 17));
+        response.setSite(siteSummary(3L, "Site Lyon", "Lyon"));
 
         when(bilanService.getBilansBySite(3L)).thenReturn(Collections.singletonList(response));
 
         mockMvc.perform(get("/api/sites/3/bilans"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].id").value(8))
+            .andExpect(jsonPath("$[0].site.city").value("Lyon"))
             .andExpect(jsonPath("$[0].totalCo2").value(17.9));
     }
 
@@ -90,5 +94,13 @@ class BilanControllerTest {
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("Site introuvable avec l'id 404"))
             .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    private BilanResponse.SiteSummary siteSummary(Long id, String name, String city) {
+        BilanResponse.SiteSummary siteSummary = new BilanResponse.SiteSummary();
+        siteSummary.setId(id);
+        siteSummary.setName(name);
+        siteSummary.setCity(city);
+        return siteSummary;
     }
 }

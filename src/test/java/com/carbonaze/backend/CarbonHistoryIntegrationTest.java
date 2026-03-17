@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -68,6 +69,7 @@ class CarbonHistoryIntegrationTest {
                     + "}"))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.siteId").value(siteId))
+            .andExpect(jsonPath("$.site.city").value("Paris"))
             .andExpect(jsonPath("$.totalCo2").value(18.5));
 
         mockMvc.perform(post("/api/sites/{siteId}/bilans", siteId)
@@ -83,6 +85,7 @@ class CarbonHistoryIntegrationTest {
         mockMvc.perform(get("/api/sites/{siteId}/bilans", siteId))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].site.name").value("Site Paris"))
             .andExpect(jsonPath("$[0].calculationDate").value("2026-03-17"))
             .andExpect(jsonPath("$[0].totalCo2").value(17.9))
             .andExpect(jsonPath("$[1].calculationDate").value("2026-03-16"))
@@ -111,6 +114,7 @@ class CarbonHistoryIntegrationTest {
             .andExpect(jsonPath("$", hasSize(3)))
             .andExpect(jsonPath("$[0].calculationDate").value("2026-03-18"))
             .andExpect(jsonPath("$[0].siteId").value(siteLyonId))
+            .andExpect(jsonPath("$[0].site.name").value("Site Lyon"))
             .andExpect(jsonPath("$[1].calculationDate").value("2026-03-17"))
             .andExpect(jsonPath("$[2].calculationDate").value("2026-03-16"));
     }
@@ -125,6 +129,7 @@ class CarbonHistoryIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(bilanId))
             .andExpect(jsonPath("$.siteId").value(siteId))
+            .andExpect(jsonPath("$.site.name").value("Site Lille"))
             .andExpect(jsonPath("$.totalCo2").value(11.7))
             .andExpect(jsonPath("$.calculationDate").value("2026-03-20"));
     }
@@ -199,6 +204,26 @@ class CarbonHistoryIntegrationTest {
             .andExpect(jsonPath("$[0].name").value("Acier recycle"))
             .andExpect(jsonPath("$[0].energeticValue").value(2.1))
             .andExpect(jsonPath("$[1].name").value("Bois"));
+    }
+
+    @Test
+    void shouldRetrieveSiteComparisonWithLatestBilan() throws Exception {
+        long societyId = createSociety("Carbonaze Compare");
+        long siteParisId = createSite(societyId, "Site Paris", "Paris");
+        long siteLyonId = createSite(societyId, "Site Lyon", "Lyon");
+
+        createBilan(siteParisId, 18.5, "2026-03-16");
+        createBilan(siteParisId, 17.9, "2026-03-17");
+        createBilan(siteLyonId, 12.3, "2026-03-18");
+
+        mockMvc.perform(get("/api/sites/comparison"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[?(@.id==" + siteParisId + ")].name", hasItem("Site Paris")))
+            .andExpect(jsonPath("$[?(@.id==" + siteParisId + ")].latestTotalCo2", hasItem(17.9)))
+            .andExpect(jsonPath("$[?(@.id==" + siteParisId + ")].latestCalculationDate", hasItem("2026-03-17")))
+            .andExpect(jsonPath("$[?(@.id==" + siteLyonId + ")].latestTotalCo2", hasItem(12.3)))
+            .andExpect(jsonPath("$[?(@.id==" + siteLyonId + ")].latestCalculationDate", hasItem("2026-03-18")));
     }
 
     private long createSociety(String name) throws Exception {

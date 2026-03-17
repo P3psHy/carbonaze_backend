@@ -81,7 +81,25 @@ public class BilanService {
         response.setGasKwhYear(bilan.getGasKwhYear());
         response.setTotalCo2(bilan.getTotalCo2());
         response.setCalculationDate(bilan.getCalculationDate());
-        response.setSiteId(bilan.getSite().getId());
+        Site site = bilan.getSite();
+        response.setSiteId(site.getId());
+        response.setSite(toSiteSummary(site));
         return response;
+    }
+
+    private BilanResponse.SiteSummary toSiteSummary(Site site) {
+        BilanResponse.SiteSummary siteSummary = new BilanResponse.SiteSummary();
+        siteSummary.setId(site.getId());
+        siteSummary.setName(site.getName());
+        siteSummary.setCity(site.getCity());
+        siteSummary.setNumberEmployee(site.getNumberEmployee());
+        siteSummary.setParkingPlaces(site.getParkingPlaces());
+        siteSummary.setNumberPc(site.getNumberPc());
+
+        if (site.getSociety() != null) {
+            siteSummary.setSocietyId(site.getSociety().getId());
+        }
+
+        return siteSummary;
     }
 }
